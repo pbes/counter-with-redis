@@ -6,36 +6,32 @@ var port = process.env.PORT || 3000;
 var dbhost = process.env.DBHOST || "redis";
 
 var client = redis.createClient(6379, dbhost);
+var connected = false;
 
 client.on('connect', function(){
+  connected = true;
   console.log('DB: connected to: ' + dbhost);
+});
+
+client.on('error', function(err) {
+  console.error('Can\'t connect to Redis DB', err);
 });
 
 var app = express();
 app.use(morgan('dev'));
 
-app.get('/', function(req, res){
-  client.get("counter", function(err, reply){
-    if (reply === null) {
-      client.set("counter", 0, function() {
-        res.json({ counter: 0 });
-      });
-    } else {
-      res.json({ counter: reply });
-    }
-  });
-});
-
-app.put('/inc', function(req, res){
-  client.incr("counter", function(err, reply) {
-    res.status(204).end();
-  });
-});
-
-app.put('/dec', function(req, res){
-  client.decr("counter", function(err, reply) {
-    res.status(204).end();
-  });
+app.get('/', function(req, res) {
+  if (connected) {
+    client.incr("counter", function(err, counter){
+      if (err) {
+        res.json({ status: "ERROR", reason: err });
+      } else {
+        res.json({ status: "OK", counter: counter });
+      }
+    });
+  } else {
+    res.json({ status: "ERROR", reason: "Not connected to DB" });
+  }
 });
 
 app.listen(port);
