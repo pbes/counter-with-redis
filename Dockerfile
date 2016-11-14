@@ -1,4 +1,4 @@
-FROM node:4.4.4-slim
+FROM node:4.6.1-slim
 MAINTAINER Peter Bessenyei
 RUN mkdir -p /app
 WORKDIR /app
